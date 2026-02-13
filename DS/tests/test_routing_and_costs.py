@@ -46,4 +46,4 @@ def test_cost_logger_summary():
         summary = logger.get_summary("agent1")
         assert summary["count"] == 2
         assert summary["total_tokens"] == 150
-        assert summary["total_cost_usd"] == 0.075
+        assert abs(summary["total_cost_usd"] - 0.075) < 1e-9  # Use approx comparison for floats

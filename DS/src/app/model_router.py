@@ -26,6 +26,8 @@ class ModelRouter:
     def __init__(self):
         self.providers: Dict[str, ProviderConfig] = {}
         self.default_provider: str = "mock"
+        # Register mock provider by default for testing
+        self.register_provider("mock", ProviderConfig(ProviderType.MOCK))
     
     def register_provider(self, name: str, config: ProviderConfig) -> None:
         """Register a model provider."""
