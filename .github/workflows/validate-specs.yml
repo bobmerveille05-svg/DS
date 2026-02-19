@@ -1,0 +1,21 @@
+name: Validate Specs
+
+on:
+  pull_request:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate required spec files
+        run: |
+          set -e
+          for dir in .specify/specs/*; do
+            [ -d "$dir" ] || continue
+            [ -f "$dir/spec.md" ] || { echo "Missing spec.md in $dir"; exit 1; }
+            [ -f "$dir/plan.md" ] || { echo "Missing plan.md in $dir"; exit 1; }
+            [ -f "$dir/tasks.md" ] || { echo "Missing tasks.md in $dir"; exit 1; }
+          done
