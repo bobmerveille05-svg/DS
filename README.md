@@ -28,3 +28,10 @@ specify init . --here --ai copilot
 
 ## Workflow
 Spec → Plan → Tasks → Atlas Phases → Implementation → Review → Commit
+
+
+## Validation rapide
+
+```bash
+./scripts/verify-template-alignment.sh
+```

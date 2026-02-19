@@ -4,40 +4,53 @@ spec-to-atlas.py
 Convertit tasks.md (spec-kit) → atlas-phases.md (Atlas)
 """
 
+import argparse
 import re
 import sys
-import argparse
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
+
+TASK_LINE = re.compile(r'^\s*(?:[-*]\s*\[[xX\s]\]|\d+\.)\s*(.+)$')
+FILE_HINT = re.compile(r'`([^`]+\.[a-zA-Z0-9]+)`')
 
 
 def parse_tasks(tasks_md: str) -> list[dict]:
-    """Parse tasks.md et extrait les tâches groupées par user story."""
-    phases = []
-    current_phase = None
-    current_tasks = []
+    """Parse tasks.md et extrait les tâches groupées par user story / work package."""
+    phases: list[dict] = []
+    current_phase: str | None = None
+    current_tasks: list[dict] = []
 
-    for line in tasks_md.split('\n'):
-        if line.startswith('## ') or line.startswith('### '):
+    for raw_line in tasks_md.splitlines():
+        line = raw_line.rstrip()
+
+        if line.startswith('## '):
             if current_phase and current_tasks:
                 phases.append({'name': current_phase, 'tasks': current_tasks})
-            current_phase = line.strip('#').strip()
+            current_phase = line.lstrip('#').strip()
             current_tasks = []
-        elif re.match(r'\s*[-*]\s*\[.\]', line) or re.match(r'\s*\d+\.', line):
-            task_text = re.sub(r'\s*[-*]\s*\[.\]\s*', '', line).strip()
-            task_text = re.sub(r'\s*\d+\.\s*', '', task_text).strip()
-            if task_text:
-                parallelizable = '[P]' in task_text
-                task_text = task_text.replace('[P]', '').strip()
-                file_match = re.search(r'`([^`]+\.[a-z]+)`', task_text)
-                file_path = file_match.group(1) if file_match else '{{FILE_PATH}}'
-                agent = detect_agent(task_text)
-                current_tasks.append({
-                    'text': task_text,
-                    'file': file_path,
-                    'parallel': parallelizable,
-                    'agent': agent,
-                })
+            continue
+
+        match = TASK_LINE.match(line)
+        if not match:
+            continue
+
+        task_text = match.group(1).strip()
+        if not task_text:
+            continue
+
+        parallelizable = '[P]' in task_text
+        task_text = task_text.replace('[P]', '').strip()
+        task_text = re.sub(r'^T\d+\s+', '', task_text)
+
+        file_match = FILE_HINT.search(task_text)
+        file_path = file_match.group(1) if file_match else '{{FILE_PATH}}'
+
+        current_tasks.append({
+            'text': task_text,
+            'file': file_path,
+            'parallel': parallelizable,
+            'agent': detect_agent(task_text),
+        })
 
     if current_phase and current_tasks:
         phases.append({'name': current_phase, 'tasks': current_tasks})
@@ -48,18 +61,20 @@ def parse_tasks(tasks_md: str) -> list[dict]:
 def detect_agent(task_text: str) -> str:
     """Détermine le bon agent selon le contenu de la tâche."""
     task_lower = task_text.lower()
-    frontend_keywords = [
+    frontend_keywords = {
         'ui', 'component', 'css', 'html', 'style', 'layout',
         'frontend', 'responsive', 'button', 'form', 'page', 'view',
-    ]
-    if any(kw in task_lower for kw in frontend_keywords):
-        return 'Frontend-Engineer-subagent'
-    return 'Sisyphus-subagent'
+    }
+    return (
+        'Frontend-Engineer-subagent'
+        if any(kw in task_lower for kw in frontend_keywords)
+        else 'Sisyphus-subagent'
+    )
 
 
 def detect_parallelizable(phase: dict) -> bool:
     """Détecte si une phase peut être parallélisée."""
-    agents = set(task['agent'] for task in phase['tasks'])
+    agents = {task['agent'] for task in phase['tasks']}
     has_parallel_tasks = any(task['parallel'] for task in phase['tasks'])
     return len(agents) > 1 or has_parallel_tasks
 
@@ -80,38 +95,39 @@ def generate_atlas_phases(feature_id: str, feature_name: str, phases: list[dict]
 
     for i, phase in enumerate(phases, 1):
         parallelizable = detect_parallelizable(phase)
-        parallel_label = " [PARALLEL]" if parallelizable else ""
-        tasks_by_agent: dict[str, list] = {}
+        parallel_label = ' [PARALLEL]' if parallelizable else ''
+        tasks_by_agent: dict[str, list[dict]] = {}
         for task in phase['tasks']:
-            agent = task['agent']
-            tasks_by_agent.setdefault(agent, []).append(task)
+            tasks_by_agent.setdefault(task['agent'], []).append(task)
 
         output.append(f"### Phase {i}: {phase['name']}{parallel_label}")
         output.append(f"**Parallélisable:** {'Oui' if parallelizable else 'Non'}")
         if len(tasks_by_agent) == 1:
-            output.append(f"**Agent principal:** {list(tasks_by_agent.keys())[0]}")
+            output.append(f"**Agent principal:** {next(iter(tasks_by_agent))}")
         else:
             output.append(f"**Agents:** {', '.join(tasks_by_agent.keys())}")
-        output.append("")
+        output.append('')
 
+        task_idx = 1
         for agent, tasks in tasks_by_agent.items():
             if len(tasks_by_agent) > 1:
                 output.append(f"#### {agent} Tasks")
-            for j, task in enumerate(tasks, 1):
-                output.append(f"- [ ] {i}.{j} {task['text']} → `{task['file']}`")
+            for task in tasks:
+                output.append(f"- [ ] {i}.{task_idx} {task['text']} → `{task['file']}`")
+                task_idx += 1
 
-        output.append("\n#### Tests TDD requis")
+        output.append('\n#### Tests TDD requis')
         for task in phase['tasks']:
             output.append(f"- [ ] Test: {task['text'][:50]}...")
 
-        output.append("\n#### Validation")
-        if parallelizable:
+        output.append('\n#### Validation')
+        if parallelizable and len(tasks_by_agent) > 1:
             output.append(f"- Agent: Code-Review-subagent x{len(tasks_by_agent)} (parallel)")
         else:
-            output.append("- Agent: Code-Review-subagent")
+            output.append('- Agent: Code-Review-subagent')
 
         output.append(f"- Commit: `feat({feature_id}): {phase['name'].lower()}`")
-        output.append("\n---\n")
+        output.append('\n---\n')
 
     return '\n'.join(output)
 
@@ -137,6 +153,10 @@ def main() -> None:
 
     print(f"📋 Parsing tasks for: {feature_name}")
     phases = parse_tasks(tasks_md)
+    if not phases:
+        print('❌ No phases with tasks were detected in tasks.md')
+        sys.exit(1)
+
     print(f"✅ Found {len(phases)} phases")
     atlas_content = generate_atlas_phases(feature_id, feature_name, phases)
 
@@ -144,7 +164,7 @@ def main() -> None:
     output_file.write_text(atlas_content)
 
     print(f"✅ Generated: {output_file}")
-    print("\n🚀 Next step in VS Code:")
+    print('\n🚀 Next step in VS Code:')
     print(f"   @Atlas implement from .specify/specs/{feature_id}/atlas-phases.md")
 
 
