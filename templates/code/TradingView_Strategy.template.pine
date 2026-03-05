@@ -1,0 +1,114 @@
+// =============================================================
+// {{STRATEGY_NAME}} (Pine Script v5)
+// BMAD-Trading Method - generated skeleton
+// Source: STRATEGY-SPEC v{{VERSION}} -> LOGIC-MODEL v{{VERSION}}
+// =============================================================
+
+//@version=5
+strategy(
+    title="{{STRATEGY_NAME}} - BMAD",
+    overlay=true,
+    initial_capital=10000,
+    pyramiding=0,
+    calc_on_every_tick=false,
+    process_orders_on_close=true
+)
+
+// =========================
+// [INPUTS]
+// =========================
+rsiPeriod       = input.int(14, "[P-01] RSI period", minval=5, maxval=50)
+emaPeriod       = input.int(50, "[P-02] EMA period", minval=10, maxval=200)
+atrPeriod       = input.int(14, "[P-03] ATR period", minval=5, maxval=50)
+rsiOversold     = input.float(30.0, "[P-04] RSI oversold", minval=10.0, maxval=40.0)
+rsiOverbought   = input.float(70.0, "[P-05] RSI overbought", minval=60.0, maxval=90.0)
+atrMultSL       = input.float(2.0, "[P-07] ATR mult SL", minval=0.5, maxval=5.0)
+tpRatio         = input.float(3.0, "[P-08] TP/SL ratio", minval=1.0, maxval=10.0)
+useTrailing     = input.bool(true, "[P-09] Use trailing")
+trailStepPips   = input.float(10.0, "[P-11] Trail step (pips)", minval=1.0, maxval=50.0)
+startHour       = input.int(8, "[P-12] Start hour", minval=0, maxval=23)
+endHour         = input.int(20, "[P-13] End hour", minval=0, maxval=23)
+adxPeriod       = input.int(14, "[P-15] ADX period", minval=5, maxval=50)
+adxMinimum      = input.float(20.0, "[P-16] ADX minimum", minval=5.0, maxval=50.0)
+
+// =========================
+// [INDICATORS]
+// =========================
+rsiValue = ta.rsi(close, rsiPeriod)  // [IND-1]
+emaValue = ta.ema(close, emaPeriod)  // [IND-2]
+atrValue = ta.atr(atrPeriod)         // [IND-3]
+
+// Simple ADX implementation (optional). Replace if your logic differs.
+dirmov(len) =>
+    up = ta.change(high)
+    down = -ta.change(low)
+    plusDM = na(up) ? na : (up > down and up > 0 ? up : 0)
+    minusDM = na(down) ? na : (down > up and down > 0 ? down : 0)
+    trur = ta.rma(ta.tr, len)
+    plus = fixnan(100 * ta.rma(plusDM, len) / trur)
+    minus = fixnan(100 * ta.rma(minusDM, len) / trur)
+    [plus, minus]
+
+adx(dilen, adxlen) =>
+    [plus, minus] = dirmov(dilen)
+    sum = plus + minus
+    100 * ta.rma(math.abs(plus - minus) / (sum == 0 ? 1 : sum), adxlen)
+
+adxValue = adx(adxPeriod, adxPeriod)  // [IND-4]
+
+// =========================
+// [SIGNALS]
+// =========================
+// [LONG-1]
+longCond1 = ta.crossover(rsiValue, rsiOversold)
+// [LONG-2]
+longCond2 = close > emaValue
+signalLong = longCond1 and longCond2
+
+// [SHORT-1]
+shortCond1 = ta.crossunder(rsiValue, rsiOverbought)
+// [SHORT-2]
+shortCond2 = close < emaValue
+signalShort = shortCond1 and shortCond2
+
+// =========================
+// [FILTERS]
+// =========================
+currentHour = hour(time)
+filterTime = (currentHour >= startHour) and (currentHour < endHour)  // [FLT-1]
+filterTrend = adxValue >= adxMinimum                                // [FLT-3]
+allFilters = filterTime and filterTrend
+
+// =========================
+// [RISK] SL/TP distances
+// =========================
+slDist = atrValue * atrMultSL
+tpDist = slDist * tpRatio
+
+// =========================
+// [EXECUTION]
+// =========================
+if signalLong and allFilters
+    strategy.entry("L", strategy.long)
+    strategy.exit("L-exit", from_entry="L", stop=close - slDist, limit=close + tpDist,
+        trail_points=useTrailing ? trailStepPips * 10 : na,
+        trail_offset=useTrailing ? trailStepPips * 10 : na)
+
+if signalShort and allFilters
+    strategy.entry("S", strategy.short)
+    strategy.exit("S-exit", from_entry="S", stop=close + slDist, limit=close - tpDist,
+        trail_points=useTrailing ? trailStepPips * 10 : na,
+        trail_offset=useTrailing ? trailStepPips * 10 : na)
+
+// [EXIT-SIGNAL] reverse close
+if strategy.position_size > 0 and signalShort
+    strategy.close("L", comment="reverse")
+if strategy.position_size < 0 and signalLong
+    strategy.close("S", comment="reverse")
+
+// =========================
+// [MONITORING]
+// =========================
+plot(emaValue, title="EMA", color=color.new(color.blue, 0))
+plotchar(signalLong and allFilters, title="Long", char="L", location=location.belowbar, color=color.new(color.green, 0))
+plotchar(signalShort and allFilters, title="Short", char="S", location=location.abovebar, color=color.new(color.red, 0))

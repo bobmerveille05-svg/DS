@@ -1,0 +1,177 @@
+{
+  "gates": {
+    "GATE-01": {
+      "name": "Spec Complete",
+      "phase_from": 1,
+      "phase_to": 2,
+      "checklist": [
+        {
+          "id": "G01-C01",
+          "required": true,
+          "question": "All LONG entry conditions are listed?"
+        },
+        {
+          "id": "G01-C02",
+          "required": true,
+          "question": "All SHORT entry conditions are listed?"
+        },
+        {
+          "id": "G01-C03",
+          "required": true,
+          "question": "Stop Loss is defined (method + value)?"
+        },
+        {
+          "id": "G01-C04",
+          "required": true,
+          "question": "Take Profit is defined?"
+        },
+        {
+          "id": "G01-C05",
+          "required": true,
+          "question": "Risk management defined (position sizing method)?"
+        },
+        {
+          "id": "G01-C06",
+          "required": true,
+          "question": "Target markets and timeframes listed?"
+        },
+        {
+          "id": "G01-C07",
+          "required": true,
+          "question": "All parameters have type, default, and range?"
+        },
+        {
+          "id": "G01-C08",
+          "required": true,
+          "question": "Operational constraints defined?"
+        },
+        {
+          "id": "G01-C09",
+          "required": true,
+          "question": "Spec is unambiguous (single possible interpretation)?"
+        }
+      ]
+    },
+    "GATE-02": {
+      "name": "Logic Verified",
+      "phase_from": 2,
+      "phase_to": 3,
+      "checklist": [
+        {
+          "id": "G02-C01",
+          "required": true,
+          "question": "Each indicator has an exact mathematical formula?"
+        },
+        {
+          "id": "G02-C02",
+          "required": true,
+          "question": "State machine is complete (all states + transitions)?"
+        },
+        {
+          "id": "G02-C03",
+          "required": true,
+          "question": "BMAD-PC pseudo-code covers 100% of the spec?"
+        },
+        {
+          "id": "G02-C04",
+          "required": true,
+          "question": "Truth table is complete?"
+        },
+        {
+          "id": "G02-C05",
+          "required": true,
+          "question": "Edge cases are documented and treated?"
+        },
+        {
+          "id": "G02-C06",
+          "required": true,
+          "question": "Pseudo-code is platform-agnostic?"
+        },
+        {
+          "id": "G02-C07",
+          "required": true,
+          "question": "Each rule has an ID traceable back to the spec?"
+        }
+      ]
+    },
+    "GATE-03": {
+      "name": "Code Review",
+      "phase_from": 3,
+      "phase_to": 4,
+      "checklist": [
+        {
+          "id": "G03-C01",
+          "required": true,
+          "question": "Code compiles without errors/warnings on each platform?"
+        },
+        {
+          "id": "G03-C02",
+          "required": true,
+          "question": "Each code block references its RULE-ID?"
+        },
+        {
+          "id": "G03-C03",
+          "required": true,
+          "question": "MT4/MT5/Pine versions are logically identical?"
+        },
+        {
+          "id": "G03-C04",
+          "required": true,
+          "question": "Error handling is implemented?"
+        },
+        {
+          "id": "G03-C05",
+          "required": true,
+          "question": "No magic numbers in code (all constants are inputs/consts)?"
+        },
+        {
+          "id": "G03-C06",
+          "required": true,
+          "question": "Standard BMAD structure is respected?"
+        }
+      ]
+    },
+    "GATE-04": {
+      "name": "Test Validated",
+      "phase_from": 4,
+      "phase_to": 5,
+      "checklist": [
+        {
+          "id": "G04-C01",
+          "required": true,
+          "question": "Unit tests pass 100%?"
+        },
+        {
+          "id": "G04-C02",
+          "required": true,
+          "question": "Backtest covers >= 5 years OR >= 1000 trades?"
+        },
+        {
+          "id": "G04-C03",
+          "required": true,
+          "question": "All mandatory metrics are computed?"
+        },
+        {
+          "id": "G04-C04",
+          "required": true,
+          "question": "Walk-forward analysis completed?"
+        },
+        {
+          "id": "G04-C05",
+          "required": true,
+          "question": "Monte Carlo completed (>= 1000 runs)?"
+        },
+        {
+          "id": "G04-C06",
+          "required": true,
+          "question": "Parameter sensitivity completed (+/- 20%)?"
+        },
+        {
+          "id": "G04-C07",
+          "required": true,
+          "question": "Degradation tests completed (spread/slippage)?"
+        }
+      ]
+    }
+  }
+}

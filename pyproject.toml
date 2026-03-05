@@ -1,0 +1,30 @@
+[build-system]
+requires = [
+  "setuptools>=68",
+  "wheel>=0.41"
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bmad-trading"
+version = "0.1.0"
+description = "BMAD-Trading Method scaffold and CLI"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+bmad = "bmad.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["bmad*"]
+
+[tool.setuptools.package-data]
+"bmad" = ["data/*.json"]
+"bmad.resources" = [
+  "docs/*.md",
+  "prompts/*.md",
+  "templates/*.md",
+  "templates/code/*"
+]
