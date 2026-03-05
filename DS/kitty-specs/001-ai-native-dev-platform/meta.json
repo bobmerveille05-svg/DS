@@ -1,0 +1,10 @@
+{
+  "feature_number": "001",
+  "slug": "001-ai-native-dev-platform",
+  "friendly_name": "AI-Native Development Platform",
+  "mission": "software-dev",
+  "source_description": "From idea to shipped code in one browser tab. Autonomous agents plan, code, and review across your choice of top-tier models.",
+  "created_at": "2026-02-13T00:00:00Z",
+  "target_branch": "main",
+  "vcs": "git"
+}

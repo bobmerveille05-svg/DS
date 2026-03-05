@@ -1,6 +1,12 @@
-# BMAD-Trading Method (Scaffold + CLI)
+# DS
 
-This repo is a lightweight workspace to run the BMAD-Trading pipeline:
+This repo includes:
+- `DS/` - existing project content
+- `bmad-trading` - BMAD-Trading Method scaffold + CLI (command: `bmad`)
+
+## BMAD-Trading Method (Scaffold + CLI)
+
+This tool helps run the BMAD-Trading pipeline:
 
 Idea -> Spec -> Logic -> Code -> Test -> Proof
 
